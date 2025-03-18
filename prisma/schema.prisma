@@ -1,0 +1,88 @@
+// This is your Prisma schema file
+// Learn more about it at https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Questionnaire {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  questions   Question[]
+  responses   Response[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("questionnaires")
+}
+
+model Question {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  questionText    String
+  questionType    QuestionType
+  options         Option[]      @relation("QuestionOptions")
+  image           String?       // URL to the image if question type is image
+  order           Int
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaireId String        @db.ObjectId
+  answers         Answer[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("questions")
+}
+
+model Option {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  text       String
+  order      Int
+  question   Question @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("options")
+}
+
+model Response {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaireId String        @db.ObjectId
+  answers         Answer[]
+  startTime       DateTime      @default(now())
+  endTime         DateTime?
+  completionTime  Int?          // Stored in seconds
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("responses")
+}
+
+model Answer {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  response       Response  @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  responseId     String    @db.ObjectId
+  question       Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId     String    @db.ObjectId
+  textAnswer     String?   // For text questions
+  selectedOptions String[] @db.ObjectId // For multiple choice questions (array of option IDs)
+  singleOptionId String?   @db.ObjectId // For single choice questions
+  imageAnswer    String?   // URL to the uploaded image answer
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("answers")
+}
+
+enum QuestionType {
+  TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  IMAGE
+}

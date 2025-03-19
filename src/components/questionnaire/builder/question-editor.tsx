@@ -1,50 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { QuestionType } from '@prisma/client';
-import { Trash2, GripVertical, Plus, ImageIcon } from 'lucide-react';
+import { Trash2, GripVertical, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import OptionEditor from './option-editor';
 import { QuestionnaireFormValues } from '@/lib/validators/questionnaire';
 import { CldUploadButton } from 'next-cloudinary';
 import { CloudinaryUploadWidgetResults } from 'next-cloudinary';
 import Image from 'next/image';
+import OptionsList from './options-list';
+import { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 
 interface QuestionEditorProps {
   index: number;
   onRemove: () => void;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
 }
 
 export default function QuestionEditor({
   index,
   onRemove,
+  dragHandleProps,
 }: QuestionEditorProps) {
-  const { register, control, watch, setValue } =
+  const { register, watch, setValue } =
     useFormContext<QuestionnaireFormValues>();
   const questionType = watch(`questions.${index}.questionType`);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  const {
-    fields: options,
-    append,
-    remove,
-  } = useFieldArray({
-    control,
-    name: `questions.${index}.options`,
-  });
-
-  const handleAddOption = () => {
-    append({ text: '', order: options.length });
-  };
-
-  const handleRemoveOption = (optionIndex: number) => {
-    remove(optionIndex);
-  };
 
   const handleImageUpload = (result: CloudinaryUploadWidgetResults) => {
     setUploadingImage(false);
@@ -59,7 +45,10 @@ export default function QuestionEditor({
 
   return (
     <Card className="mb-4 relative">
-      <div className="absolute left-3 top-6 cursor-move touch-none">
+      <div 
+        className="absolute left-3 top-7.5 cursor-move touch-none" 
+        {...dragHandleProps}
+      >
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
 
@@ -129,37 +118,7 @@ export default function QuestionEditor({
 
         {(questionType === QuestionType.SINGLE_CHOICE ||
           questionType === QuestionType.MULTIPLE_CHOICE) && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Options</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddOption}
-              >
-                <Plus className="h-4 w-4 mr-1" /> Add Option
-              </Button>
-            </div>
-
-            {options.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No options added. Click &quot;Add Option&quot; to create
-                options.
-              </p>
-            )}
-
-            <div className="space-y-2">
-              {options.map((option, optionIndex) => (
-                <OptionEditor
-                  key={option.id || optionIndex}
-                  questionIndex={index}
-                  optionIndex={optionIndex}
-                  onRemove={() => handleRemoveOption(optionIndex)}
-                />
-              ))}
-            </div>
-          </div>
+          <OptionsList questionIndex={index} />
         )}
 
         {questionType === QuestionType.IMAGE && (

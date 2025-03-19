@@ -18,7 +18,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { STORAGE_KEY_PREFIX } from '@/lib/constants';
 import QuestionnaireSummary from './questionnaire-summary';
 
-// Match the interface from question-display.tsx
 interface QuestionAnswer {
   textAnswer?: string;
   selectedOptions?: string[];

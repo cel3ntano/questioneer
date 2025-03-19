@@ -26,18 +26,23 @@ export default function OptionEditor({
   const errorMessage =
     errors.questions?.[questionIndex]?.options?.[optionIndex]?.text?.message;
 
+  const draggableId = `option-${questionIndex}-${optionIndex}`;
+
   return (
     <Draggable
-      draggableId={`option-${questionIndex}-${optionIndex}`}
+      draggableId={draggableId}
       index={optionIndex}
     >
       {(provided) => (
         <div
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-2 bg-background"
           ref={provided.innerRef}
           {...provided.draggableProps}
         >
-          <div className="cursor-move touch-none" {...provided.dragHandleProps}>
+          <div 
+            className="cursor-move touch-none" 
+            {...provided.dragHandleProps}
+          >
             <GripVertical className="h-5 w-5 text-muted-foreground" />
           </div>
 

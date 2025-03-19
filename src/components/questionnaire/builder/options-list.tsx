@@ -1,7 +1,6 @@
 'use client';
 
-import { useId } from 'react';
-import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,27 +13,17 @@ interface OptionsListProps {
 }
 
 export default function OptionsList({ questionIndex }: OptionsListProps) {
-  const listId = useId();
   const {
     control,
     formState: { errors },
   } = useFormContext<QuestionnaireFormValues>();
 
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: `questions.${questionIndex}.options`,
   });
 
   const errorMessage = errors.questions?.[questionIndex]?.options?.message;
-
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-
-    move(sourceIndex, destinationIndex);
-  };
 
   const handleAddOption = () => {
     append({ text: '', order: fields.length });
@@ -65,27 +54,28 @@ export default function OptionsList({ questionIndex }: OptionsListProps) {
           No options added. Click &quot;Add Option&quot; to create options.
         </p>
       ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId={`options-list-${listId}`}>
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="space-y-2"
-              >
-                {fields.map((field, index) => (
-                  <OptionEditor
-                    key={field.id}
-                    questionIndex={questionIndex}
-                    optionIndex={index}
-                    onRemove={() => remove(index)}
-                  />
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <Droppable 
+          droppableId={`options-list-${questionIndex}`} 
+          type="option"
+        >
+          {(provided) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="space-y-2"
+            >
+              {fields.map((field, index) => (
+                <OptionEditor
+                  key={field.id}
+                  questionIndex={questionIndex}
+                  optionIndex={index}
+                  onRemove={() => remove(index)}
+                />
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       )}
     </div>
   );

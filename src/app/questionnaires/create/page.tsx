@@ -1,6 +1,9 @@
+'use client';
+
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import QuestionnaireForm from '@/components/questionnaire/builder/questionnaire-form';
 
 export default function CreateQuestionnairePage() {
   return (
@@ -15,11 +18,7 @@ export default function CreateQuestionnairePage() {
         <h1 className="text-3xl font-bold tracking-tight">Create Questionnaire</h1>
       </div>
       
-      <div className="flex items-center justify-center p-12 border rounded-lg bg-muted/40">
-        <p className="text-muted-foreground">
-          Questionnaire builder coming in the next implementation phase...
-        </p>
-      </div>
+      <QuestionnaireForm />
     </div>
   );
 }

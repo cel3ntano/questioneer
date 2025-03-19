@@ -1,0 +1,226 @@
+'use client';
+
+import { useState } from 'react';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+import { QuestionType } from '@prisma/client';
+import { Trash2, GripVertical, Plus, ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import OptionEditor from './option-editor';
+import { QuestionnaireFormValues } from '@/lib/validators/questionnaire';
+import { CldUploadButton } from 'next-cloudinary';
+import { CloudinaryUploadWidgetResults } from 'next-cloudinary';
+import Image from 'next/image';
+
+interface QuestionEditorProps {
+  index: number;
+  onRemove: () => void;
+}
+
+export default function QuestionEditor({
+  index,
+  onRemove,
+}: QuestionEditorProps) {
+  const { register, control, watch, setValue } =
+    useFormContext<QuestionnaireFormValues>();
+  const questionType = watch(`questions.${index}.questionType`);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const {
+    fields: options,
+    append,
+    remove,
+  } = useFieldArray({
+    control,
+    name: `questions.${index}.options`,
+  });
+
+  const handleAddOption = () => {
+    append({ text: '', order: options.length });
+  };
+
+  const handleRemoveOption = (optionIndex: number) => {
+    remove(optionIndex);
+  };
+
+  const handleImageUpload = (result: CloudinaryUploadWidgetResults) => {
+    setUploadingImage(false);
+    if (
+      result.info &&
+      typeof result.info !== 'string' &&
+      result.info.secure_url
+    ) {
+      setValue(`questions.${index}.image`, result.info.secure_url);
+    }
+  };
+
+  return (
+    <Card className="mb-4 relative">
+      <div className="absolute left-3 top-6 cursor-move touch-none">
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </div>
+
+      <CardHeader className="pl-10 flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="text-base font-medium">Question {index + 1}</div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          className="h-8 w-8 text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor={`questions.${index}.questionText`}>
+            Question Text
+          </Label>
+          <Input
+            id={`questions.${index}.questionText`}
+            {...register(`questions.${index}.questionText`)}
+            placeholder="Enter your question"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Question Type</Label>
+          <RadioGroup
+            value={questionType}
+            onValueChange={(value) =>
+              setValue(`questions.${index}.questionType`, value as QuestionType)
+            }
+            className="flex flex-wrap gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value={QuestionType.TEXT}
+                id={`type-text-${index}`}
+              />
+              <Label htmlFor={`type-text-${index}`}>Text</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value={QuestionType.SINGLE_CHOICE}
+                id={`type-single-${index}`}
+              />
+              <Label htmlFor={`type-single-${index}`}>Single Choice</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value={QuestionType.MULTIPLE_CHOICE}
+                id={`type-multiple-${index}`}
+              />
+              <Label htmlFor={`type-multiple-${index}`}>Multiple Choice</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                value={QuestionType.IMAGE}
+                id={`type-image-${index}`}
+              />
+              <Label htmlFor={`type-image-${index}`}>Image</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {(questionType === QuestionType.SINGLE_CHOICE ||
+          questionType === QuestionType.MULTIPLE_CHOICE) && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Options</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddOption}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Add Option
+              </Button>
+            </div>
+
+            {options.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No options added. Click &quot;Add Option&quot; to create
+                options.
+              </p>
+            )}
+
+            <div className="space-y-2">
+              {options.map((option, optionIndex) => (
+                <OptionEditor
+                  key={option.id || optionIndex}
+                  questionIndex={index}
+                  optionIndex={optionIndex}
+                  onRemove={() => handleRemoveOption(optionIndex)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {questionType === QuestionType.IMAGE && (
+          <div className="space-y-2">
+            <Label>Image Preview</Label>
+            <div className="border rounded-md p-4 flex flex-col items-center justify-center">
+              {watch(`questions.${index}.image`) ? (
+                <div className="relative w-full">
+                  <Image
+                    src={watch(`questions.${index}.image`) || ''}
+                    alt="Question"
+                    className="rounded-md max-h-48 object-contain mx-auto"
+                    width={400}
+                    height={240}
+                    style={{ objectFit: 'contain', maxHeight: '12rem' }}
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => setValue(`questions.${index}.image`, '')}
+                  >
+                    Remove Image
+                  </Button>
+                </div>
+              ) : (
+                <CldUploadButton
+                  uploadPreset={
+                    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+                    'questioneer'
+                  }
+                  onUpload={handleImageUpload}
+                  options={{
+                    maxFiles: 1,
+                    resourceType: 'image',
+                  }}
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md"
+                >
+                  {uploadingImage ? (
+                    <span>Uploading...</span>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">
+                        Upload an image
+                      </span>
+                    </>
+                  )}
+                </CldUploadButton>
+              )}
+            </div>
+          </div>
+        )}
+
+        <input
+          type="hidden"
+          {...register(`questions.${index}.order`)}
+          value={index}
+        />
+      </CardContent>
+    </Card>
+  );
+}

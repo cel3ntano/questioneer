@@ -64,6 +64,14 @@ export type ResponseWithAnswers = Response & {
   questionnaire: Questionnaire;
 };
 
+export type AnswerInput = {
+  questionId: string;
+  textAnswer?: string;
+  singleOptionId?: string;
+  selectedOptions?: string[];
+  imageAnswer?: string;
+}
+
 export const SORT_OPTIONS: SortOption[] = [
   { label: 'Newest', value: 'createdAt-desc', column: 'createdAt' },
   { label: 'Oldest', value: 'createdAt-asc', column: 'createdAt' },

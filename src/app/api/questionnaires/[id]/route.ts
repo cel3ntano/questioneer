@@ -3,11 +3,12 @@ import { prisma } from '@/lib/db';
 import { QuestionInput, OptionInput } from '@/types/questionnaire';
 
 export async function GET(
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
-    
+    const { id } = await params;
+
     const questionnaire = await prisma.questionnaire.findUnique({
       where: { id },
       include: {
@@ -30,14 +31,14 @@ export async function GET(
         },
       },
     });
-    
+
     if (!questionnaire) {
       return NextResponse.json(
         { error: 'Questionnaire not found' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(questionnaire);
   } catch (error) {
     console.error('Error fetching questionnaire:', error);
@@ -53,27 +54,27 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
-    
+
     if (!body.name || !body.description) {
       return NextResponse.json(
         { error: 'Name and description are required' },
         { status: 400 }
       );
     }
-    
+
     const existingQuestionnaire = await prisma.questionnaire.findUnique({
       where: { id },
     });
-    
+
     if (!existingQuestionnaire) {
       return NextResponse.json(
         { error: 'Questionnaire not found' },
         { status: 404 }
       );
     }
-    
+
     await prisma.questionnaire.update({
       where: { id },
       data: {
@@ -81,12 +82,12 @@ export async function PUT(
         description: body.description,
       },
     });
-    
+
     if (Array.isArray(body.questions)) {
       await prisma.question.deleteMany({
         where: { questionnaireId: id },
       });
-      
+
       await Promise.all(
         body.questions.map(async (question: QuestionInput, index: number) => {
           const newQuestion = await prisma.question.create({
@@ -100,10 +101,10 @@ export async function PUT(
               },
             },
           });
-          
+
           if (
-            (question.questionType === 'SINGLE_CHOICE' || 
-             question.questionType === 'MULTIPLE_CHOICE') && 
+            (question.questionType === 'SINGLE_CHOICE' ||
+              question.questionType === 'MULTIPLE_CHOICE') &&
             Array.isArray(question.options)
           ) {
             await Promise.all(
@@ -120,12 +121,12 @@ export async function PUT(
               })
             );
           }
-          
+
           return newQuestion;
         })
       );
     }
-    
+
     const fullUpdatedQuestionnaire = await prisma.questionnaire.findUnique({
       where: { id },
       include: {
@@ -143,7 +144,7 @@ export async function PUT(
         },
       },
     });
-    
+
     return NextResponse.json(fullUpdatedQuestionnaire);
   } catch (error) {
     console.error('Error updating questionnaire:', error);
@@ -155,26 +156,27 @@ export async function PUT(
 }
 
 export async function DELETE(
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-    
+    const { id } = await params;
+
     const existingQuestionnaire = await prisma.questionnaire.findUnique({
       where: { id },
     });
-    
+
     if (!existingQuestionnaire) {
       return NextResponse.json(
         { error: 'Questionnaire not found' },
         { status: 404 }
       );
     }
-    
+
     await prisma.questionnaire.delete({
       where: { id },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting questionnaire:', error);

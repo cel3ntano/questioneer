@@ -1,20 +1,19 @@
-'use client';
-
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
+import {
+  PieChart,
+  Pie,
+  Cell,
   ResponsiveContainer,
   Legend,
-  Tooltip, 
+  Tooltip,
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid
+  CartesianGrid,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuestionType } from '@prisma/client';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface DistributionData {
   label: string;
@@ -32,7 +31,10 @@ export default function AnswerDistribution({
   questionType,
   data,
 }: AnswerDistributionProps) {
-  if (data.length === 0 || data.every(item => item.value === 0)) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isSmallScreen = useMediaQuery('(max-width: 1285px)');
+
+  if (data.length === 0 || data.every((item) => item.value === 0)) {
     return (
       <Card>
         <CardHeader>
@@ -61,9 +63,34 @@ export default function AnswerDistribution({
     color: COLORS[index % COLORS.length],
   }));
 
-  const tooltipFormatter = (value: number) => [`${value} responses`, 'Responses'];
+  const tooltipFormatter = (value: number) => [
+    `${value} responses`,
+    'Responses',
+  ];
 
   const useBarChart = questionType === QuestionType.TEXT || data.length > 5;
+
+  const getBarChartHeight = () => {
+    const baseHeight = 256;
+    const heightPerItem = 40;
+    return Math.max(baseHeight, data.length * heightPerItem);
+  };
+
+  const getPieChartDimensions = () => {
+    if (isMobile) {
+      return {
+        outerRadius: formattedData.length > 3 ? 45 : 60,
+        innerRadius: formattedData.length > 5 ? 20 : 0,
+      };
+    }
+
+    return {
+      outerRadius: formattedData.length > 3 ? 70 : 80,
+      innerRadius: formattedData.length > 5 ? 30 : 0,
+    };
+  };
+
+  const { outerRadius, innerRadius } = getPieChartDimensions();
 
   return (
     <Card>
@@ -72,53 +99,90 @@ export default function AnswerDistribution({
           {questionText}
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent
+        className={useBarChart && data.length > 6 ? 'h-auto' : 'h-64 md:h-80'}
+      >
         {useBarChart ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
-              data={formattedData}
-              layout="vertical"
-              margin={{ left: 20, right: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis 
-                type="category" 
-                dataKey="name" 
-                width={120}
-                tickFormatter={(value) => 
-                  value.length > 20 ? value.substring(0, 20) + '...' : value
+          <div
+            style={{ height: getBarChartHeight() + 'px', minHeight: '256px' }}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={formattedData}
+                layout="vertical"
+                margin={
+                  isMobile
+                    ? { top: 10, right: 10, bottom: 20, left: 20 }
+                    : { top: 20, right: 30, bottom: 20, left: 30 }
                 }
-              />
-              <Tooltip formatter={tooltipFormatter} />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {formattedData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={isMobile ? 100 : 150}
+                  tick={{ fontSize: isMobile ? 10 : 12 }}
+                  tickFormatter={(value) => {
+                    const maxLength = isMobile ? 15 : 25;
+                    if (value.length <= maxLength) return value;
+                    return value.substring(0, maxLength - 3) + '...';
+                  }}
+                />
+                <Tooltip
+                  formatter={tooltipFormatter}
+                  labelFormatter={(label) => `${label}`}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {formattedData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart
+              margin={
+                isMobile
+                  ? { top: 5, right: 5, bottom: 40, left: 5 }
+                  : { top: 10, right: 10, bottom: 30, left: 10 }
+              }
+            >
               <Pie
                 data={formattedData}
                 cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
+                cy={isMobile ? '40%' : '50%'}
+                outerRadius={outerRadius}
+                innerRadius={innerRadius}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => 
-                  `${name}: ${(percent * 100).toFixed(0)}%`
-                }
               >
                 {formattedData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={tooltipFormatter} />
-              <Legend />
+              <Tooltip
+                formatter={tooltipFormatter}
+                labelFormatter={(name) =>
+                  `${name} (${
+                    formattedData.find((item) => item.name === name)?.value || 0
+                  })`
+                }
+              />
+              <Legend
+                layout={isMobile || isSmallScreen ? 'vertical' : 'horizontal'}
+                verticalAlign="bottom"
+                align="center"
+                wrapperStyle={{
+                  paddingTop: 10,
+                  fontSize: isMobile ? '10px' : '12px',
+                  width: '100%',
+                  maxHeight: isMobile ? '80px' : 'auto',
+                  overflowY: isMobile ? 'auto' : 'visible',
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         )}

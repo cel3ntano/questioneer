@@ -4,19 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   MenuIcon,
-  ChevronsUpDown,
   ClipboardList,
   PlusCircle,
   BarChart,
   Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 

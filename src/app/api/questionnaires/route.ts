@@ -28,6 +28,13 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
+    if (isNaN(limit) || limit <= 0 || limit > 50) {
+      return NextResponse.json(
+        { error: 'Invalid limit parameter' },
+        { status: 400 }
+      );
+    }
+
     let orderBy: OrderByType = {};
 
     if (sortBy === 'questionCount') {
@@ -48,8 +55,8 @@ export async function GET(request: NextRequest) {
 
 
     const questionnaires = await prisma.questionnaire.findMany({
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      take: limit,
+      ...(cursor ? { cursor: { id: cursor } } : {}),
+      take: limit + 1,
       orderBy,
       include: {
         _count: {
@@ -61,14 +68,21 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const lastItem = questionnaires[questionnaires.length - 1];
-    const nextCursor = lastItem?.id || null;
+    const hasMore = questionnaires.length > limit;
 
-    const hasMore = nextCursor !== null && questionnaires.length === limit;
+    const resultsToReturn = hasMore
+      ? questionnaires.slice(0, limit)
+      : questionnaires;
+
+
+    const nextCursor =
+      hasMore && resultsToReturn.length > 0
+        ? resultsToReturn[resultsToReturn.length - 1].id
+        : null;
 
     return NextResponse.json({
-      questionnaires,
-      nextCursor: hasMore ? nextCursor : null,
+      questionnaires: resultsToReturn,
+      nextCursor,
       hasMore,
     });
   } catch (error) {

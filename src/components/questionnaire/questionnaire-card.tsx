@@ -1,25 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
-import { 
-  ClipboardList, 
-  PenSquare, 
-  Play, 
-  BarChart, 
-  Trash, 
-  MoreVertical
+import {
+  ClipboardList,
+  PenSquare,
+  Play,
+  BarChart,
+  Trash,
+  MoreVertical,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { QuestionnaireWithCounts } from '@/types/questionnaire';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent, 
-  CardFooter 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,7 +41,7 @@ import {
 interface QuestionnaireCardProps {
   questionnaire: QuestionnaireWithCounts;
   onDelete: (id: string) => Promise<void>;
-  index?: number; 
+  index?: number;
 }
 
 const cardVariants = {
@@ -52,26 +52,30 @@ const cardVariants = {
     transition: {
       delay: index * 0.05,
       duration: 0.4,
-      ease: "easeOut"
-    }
+      ease: 'easeOut',
+    },
   }),
 };
 
 const dialogVariants = {
   hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
-    transition: { type: "spring", stiffness: 300, damping: 30 }
+    transition: { type: 'spring', stiffness: 300, damping: 30 },
   },
-  exit: { 
-    opacity: 0, 
-    scale: 0.95, 
-    transition: { duration: 0.2, ease: "easeOut" }
-  }
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.2, ease: 'easeOut' },
+  },
 };
 
-export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: QuestionnaireCardProps) {
+function QuestionnaireCardComponent({
+  questionnaire,
+  onDelete,
+  index = 0,
+}: QuestionnaireCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -90,7 +94,7 @@ export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: Questi
 
   return (
     <>
-      <MotionCard 
+      <MotionCard
         className="h-full flex flex-col"
         initial="hidden"
         animate="visible"
@@ -111,25 +115,34 @@ export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: Questi
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link href={`/questionnaires/${questionnaire.id}/edit`} className="cursor-pointer flex items-center">
+                  <Link
+                    href={`/questionnaires/${questionnaire.id}/edit`}
+                    className="cursor-pointer flex items-center"
+                  >
                     <PenSquare className="mr-2 h-4 w-4" />
                     Edit
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/questionnaires/${questionnaire.id}/run`} className="cursor-pointer flex items-center">
+                  <Link
+                    href={`/questionnaires/${questionnaire.id}/run`}
+                    className="cursor-pointer flex items-center"
+                  >
                     <Play className="mr-2 h-4 w-4" />
                     Run
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/questionnaires/${questionnaire.id}/stats`} className="cursor-pointer flex items-center">
+                  <Link
+                    href={`/questionnaires/${questionnaire.id}/stats`}
+                    className="cursor-pointer flex items-center"
+                  >
                     <BarChart className="mr-2 h-4 w-4" />
                     Statistics
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setIsDeleteDialogOpen(true)}
                   className="text-destructive focus:text-destructive cursor-pointer"
                 >
@@ -139,22 +152,20 @@ export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: Questi
               </DropdownMenuContent>
             </DropdownMenu>
           </CardTitle>
-          <CardDescription className="line-clamp-2">{questionnaire.description}</CardDescription>
+          <CardDescription className="line-clamp-2">
+            {questionnaire.description}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">
           <div className="grid grid-cols-2 gap-4">
-            <motion.div 
-              className="flex flex-col"
-            >
+            <motion.div className="flex flex-col">
               <span className="text-sm text-muted-foreground">Questions</span>
               <span className="font-medium flex items-center">
                 <ClipboardList className="mr-1 h-4 w-4 text-primary" />
                 {questionnaire._count.questions}
               </span>
             </motion.div>
-            <motion.div 
-              className="flex flex-col"
-            >
+            <motion.div className="flex flex-col">
               <span className="text-sm text-muted-foreground">Responses</span>
               <span className="font-medium flex items-center">
                 <BarChart className="mr-1 h-4 w-4 text-primary" />
@@ -200,20 +211,21 @@ export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: Questi
           <DialogHeader>
             <DialogTitle>Delete Questionnaire</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{questionnaire.name}&quot;? This action cannot be undone.
+              Are you sure you want to delete &quot;{questionnaire.name}&quot;?
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
               Cancel
             </Button>
             <motion.div whileTap={{ scale: 0.95 }}>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleDelete}
                 disabled={isDeleting}
               >
@@ -226,3 +238,9 @@ export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: Questi
     </>
   );
 }
+
+export const QuestionnaireCard = memo(
+  QuestionnaireCardComponent,
+  (prevProps, nextProps) =>
+    prevProps.questionnaire.id === nextProps.questionnaire.id
+);

@@ -23,6 +23,9 @@ import { SORT_OPTIONS } from '@/types/questionnaire';
 
 export default function QuestionnairesPage() {
   const [initialLoading, setInitialLoading] = useState(true);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const scrollTriggerDistance = 1000;
 
   const {
     questionnaires,
@@ -41,27 +44,31 @@ export default function QuestionnairesPage() {
     }
   }, [isLoading, initialLoading]);
 
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastQuestionnaireRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (isLoading) return;
+  const handleScroll = useCallback(() => {
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
 
-      if (observer.current) {
-        observer.current.disconnect();
+    scrollTimeout.current = setTimeout(() => {
+      if (isLoading || !hasMore) return;
+
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop =
+        document.documentElement.scrollTop || document.body.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+
+      if (scrollHeight - scrollTop - clientHeight < scrollTriggerDistance) {
+        console.log('Scroll near bottom detected, loading more...');
+        loadMore();
       }
+    }, 100);
+  }, [isLoading, hasMore, loadMore]);
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          loadMore();
-        }
-      });
-
-      if (node) {
-        observer.current.observe(node);
-      }
-    },
-    [isLoading, hasMore, loadMore]
-  );
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    };
+  }, [handleScroll]);
 
   useEffect(() => {
     return () => {
@@ -70,6 +77,34 @@ export default function QuestionnairesPage() {
       }
     };
   }, []);
+
+  const lastQuestionnaireRef = useCallback(
+    (node: HTMLDivElement) => {
+      if (!node || isLoading || !hasMore) return;
+
+      if (observer.current) {
+        observer.current.disconnect();
+      }
+
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore && !isLoading) {
+            console.log(
+              'Intersection detected, loading more questionnaires...'
+            );
+            loadMore();
+          }
+        },
+        {
+          rootMargin: '1000px',
+          threshold: 0.1,
+        }
+      );
+
+      observer.current.observe(node);
+    },
+    [isLoading, hasMore, loadMore]
+  );
 
   const currentSortOption = SORT_OPTIONS.find(
     (option) => option.value === sortValue
@@ -147,34 +182,42 @@ export default function QuestionnairesPage() {
         )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {questionnaires.map((questionnaire, index) => {
-          if (questionnaires.length === index + 1) {
-            return (
-              <div ref={lastQuestionnaireRef} key={questionnaire.id}>
-                <QuestionnaireCard
-                  questionnaire={questionnaire}
-                  onDelete={deleteQuestionnaire}
-                />
-              </div>
-            );
-          } else {
-            return (
-              <div key={questionnaire.id}>
-                <QuestionnaireCard
-                  questionnaire={questionnaire}
-                  onDelete={deleteQuestionnaire}
-                />
-              </div>
-            );
-          }
-        })}
+        {questionnaires.map((questionnaire, index) => (
+          <div key={questionnaire.id}>
+            <QuestionnaireCard
+              questionnaire={questionnaire}
+              onDelete={deleteQuestionnaire}
+              index={index}
+            />
+          </div>
+        ))}
       </div>
 
-      {(initialLoading || isLoading) && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      )}
+      {/* Fixed height container for loading states and pagination indicators */}
+      <div className="h-20 relative mt-4">
+        {/* Sentinel element for intersection observer */}
+        {hasMore && !isLoading && questionnaires.length > 0 && (
+          <div
+            ref={lastQuestionnaireRef}
+            className="absolute inset-0 flex justify-center"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Loading spinner */}
+        {isLoading && (
+          <div className="absolute inset-0 flex justify-center items-center">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* End of results message */}
+        {!hasMore && questionnaires.length > 0 && !isLoading && (
+          <div className="absolute inset-0 flex justify-center items-center text-muted-foreground">
+            That&apos;s all for now
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -89,8 +89,8 @@ function QuestionnaireCardComponent({
     }
   };
 
-  const MotionCard = motion(Card);
-  const MotionDialogContent = motion(DialogContent);
+  const MotionCard = motion.create(Card);
+  const MotionDialogContent = motion.create(DialogContent);
 
   return (
     <>

@@ -8,12 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CldUploadButton } from 'next-cloudinary';
+import { CldUploadWidget, CloudinaryUploadWidgetResults } from 'next-cloudinary';
 import { Button } from '@/components/ui/button';
 import { ImageIcon, Trash2 } from 'lucide-react';
 import { CLOUDINARY_UPLOAD_PRESET } from '@/lib/constants';
 import Image from 'next/image';
-import { CloudinaryUploadWidgetResults } from 'next-cloudinary';
 
 interface QuestionAnswer {
   textAnswer?: string;
@@ -53,17 +52,6 @@ export default function QuestionDisplay({
     }
 
     onChange({ selectedOptions });
-  };
-
-  const handleImageUpload = (results: CloudinaryUploadWidgetResults) => {
-    setUploadingImage(false);
-    if (
-      results.info &&
-      typeof results.info !== 'string' &&
-      results.info.secure_url
-    ) {
-      onChange({ imageAnswer: results.info.secure_url });
-    }
   };
 
   const handleRemoveImage = () => {
@@ -175,26 +163,54 @@ export default function QuestionDisplay({
                 </Button>
               </div>
             ) : (
-              <CldUploadButton
+              <CldUploadWidget
                 uploadPreset={CLOUDINARY_UPLOAD_PRESET}
-                onUpload={handleImageUpload}
                 options={{
                   maxFiles: 1,
                   resourceType: 'image',
+                  sources: ['local', 'url', 'camera'],
                 }}
-                className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-md"
+                onSuccess={(results: CloudinaryUploadWidgetResults, { widget }) => {
+                  setUploadingImage(false);
+
+                  if (
+                    results?.info && 
+                    typeof results.info === 'object' && 
+                    'secure_url' in results.info
+                  ) {
+                    onChange({ imageAnswer: results.info.secure_url as string });
+                  }
+
+                  widget.close();
+                }}
+                onClose={() => {
+                  setUploadingImage(false);
+                }}
               >
-                {uploadingImage ? (
-                  <span>Uploading...</span>
-                ) : (
-                  <>
-                    <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">
-                      Upload an image as your answer
-                    </span>
-                  </>
+                {({ open }) => (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      console.log('Opening widget');
+                      setUploadingImage(true);
+                      open();
+                    }}
+                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-md bg-transparent hover:bg-muted/50"
+                  >
+                    {uploadingImage ? (
+                      <span>One moment...</span>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">
+                          Upload an image as your answer
+                        </span>
+                      </>
+                    )}
+                  </Button>
                 )}
-              </CldUploadButton>
+              </CldUploadWidget>
             )}
           </div>
         )}

@@ -10,8 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { QuestionnaireFormValues } from '@/lib/validators/questionnaire';
-import { CldUploadButton } from 'next-cloudinary';
-import { CloudinaryUploadWidgetResults } from 'next-cloudinary';
+import { CldUploadWidget, CloudinaryUploadWidgetResults } from 'next-cloudinary';
 import Image from 'next/image';
 import OptionsList from './options-list';
 import { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
@@ -32,21 +31,10 @@ export default function QuestionEditor({
   const questionType = watch(`questions.${index}.questionType`);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const handleImageUpload = (result: CloudinaryUploadWidgetResults) => {
-    setUploadingImage(false);
-    if (
-      result.info &&
-      typeof result.info !== 'string' &&
-      result.info.secure_url
-    ) {
-      setValue(`questions.${index}.image`, result.info.secure_url);
-    }
-  };
-
   return (
     <Card className="mb-4 relative">
-      <div 
-        className="absolute left-3 top-7.5 cursor-move touch-none" 
+      <div
+        className="absolute left-3 top-7.5 cursor-move touch-none"
         {...dragHandleProps}
       >
         <GripVertical className="h-5 w-5 text-muted-foreground" />
@@ -146,29 +134,59 @@ export default function QuestionEditor({
                   </Button>
                 </div>
               ) : (
-                <CldUploadButton
+                <CldUploadWidget
                   uploadPreset={
                     process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
                     'questioneer'
                   }
-                  onUpload={handleImageUpload}
                   options={{
                     maxFiles: 1,
                     resourceType: 'image',
+                    sources: ['local', 'url', 'camera'],
                   }}
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md"
+                  onSuccess={(results: CloudinaryUploadWidgetResults, { widget }) => {
+                    setUploadingImage(false);
+
+                    if (
+                      results?.info && 
+                      typeof results.info === 'object' && 
+                      'secure_url' in results.info
+                    ) {
+                      setValue(
+                        `questions.${index}.image`,
+                        results.info.secure_url as string
+                      );
+                    }
+
+                    widget.close();
+                  }}
+                  onClose={() => {
+                    setUploadingImage(false);
+                  }}
                 >
-                  {uploadingImage ? (
-                    <span>Uploading...</span>
-                  ) : (
-                    <>
-                      <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Upload an image
-                      </span>
-                    </>
+                  {({ open }) => (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setUploadingImage(true);
+                        open();
+                      }}
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md bg-transparent hover:bg-muted/50"
+                    >
+                      {uploadingImage ? (
+                        <span>One moment...</span>
+                      ) : (
+                        <>
+                          <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                          <span className="text-sm text-muted-foreground">
+                            Upload an image
+                          </span>
+                        </>
+                      )}
+                    </Button>
                   )}
-                </CldUploadButton>
+                </CldUploadWidget>
               )}
             </div>
           </div>

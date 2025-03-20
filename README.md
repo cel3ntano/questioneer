@@ -1,6 +1,6 @@
 # Questioneer - Build and Analyze Interactive Questionnaires
 
-![Questioneer Banner](https://repository-images.githubusercontent.com/952152589/d16ea941-eef1-4261-9f76-4d52455925d0)
+![Questioneer Banner](https://repository-images.githubusercontent.com/952176317/c7b5b6b1-f44a-453e-b6b6-8bd4b1fc4a83)
 
 Questioneer is a modern web application designed to create, manage, and analyze interactive questionnaires. It provides an intuitive interface for building questionnaires with various question types, collecting responses, and generating insightful statistics.
 

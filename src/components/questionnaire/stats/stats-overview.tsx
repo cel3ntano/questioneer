@@ -17,10 +17,10 @@ export default function StatsOverview({
 }: StatsOverviewProps) {
   const formatTime = (seconds: number) => {
     if (seconds < 60) {
-      return `${seconds} seconds`;
+      return `${Math.round(seconds)} seconds`;
     } else if (seconds < 3600) {
       const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
+      const remainingSeconds = Math.round(seconds % 60);
       return `${minutes} min${minutes !== 1 ? 's' : ''} ${remainingSeconds > 0 ? `${remainingSeconds} sec` : ''}`;
     } else {
       const hours = Math.floor(seconds / 3600);

@@ -14,6 +14,7 @@ import { CldUploadWidget, CloudinaryUploadWidgetResults } from 'next-cloudinary'
 import Image from 'next/image';
 import OptionsList from './options-list';
 import { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
+import { CLOUDINARY_UPLOAD_PRESET } from '@/lib/constants';
 
 interface QuestionEditorProps {
   index: number;
@@ -135,10 +136,7 @@ export default function QuestionEditor({
                 </div>
               ) : (
                 <CldUploadWidget
-                  uploadPreset={
-                    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
-                    'questioneer'
-                  }
+                  uploadPreset={CLOUDINARY_UPLOAD_PRESET}
                   options={{
                     maxFiles: 1,
                     resourceType: 'image',

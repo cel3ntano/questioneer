@@ -11,6 +11,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import { QuestionnaireWithCounts } from '@/types/questionnaire';
 import { 
   Card, 
@@ -40,9 +41,37 @@ import {
 interface QuestionnaireCardProps {
   questionnaire: QuestionnaireWithCounts;
   onDelete: (id: string) => Promise<void>;
+  index?: number; 
 }
 
-export function QuestionnaireCard({ questionnaire, onDelete }: QuestionnaireCardProps) {
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: index * 0.05,
+      duration: 0.4,
+      ease: "easeOut"
+    }
+  }),
+};
+
+const dialogVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 30 }
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95, 
+    transition: { duration: 0.2, ease: "easeOut" }
+  }
+};
+
+export function QuestionnaireCard({ questionnaire, onDelete, index = 0 }: QuestionnaireCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -56,9 +85,20 @@ export function QuestionnaireCard({ questionnaire, onDelete }: QuestionnaireCard
     }
   };
 
+  const MotionCard = motion(Card);
+  const MotionDialogContent = motion(DialogContent);
+
   return (
     <>
-      <Card className="h-full flex flex-col">
+      <MotionCard 
+        className="h-full flex flex-col"
+        initial="hidden"
+        animate="visible"
+        whileHover="hover"
+        variants={cardVariants}
+        custom={index}
+        layout
+      >
         <CardHeader>
           <CardTitle className="flex justify-between items-start">
             <span className="line-clamp-1">{questionnaire.name}</span>
@@ -103,20 +143,24 @@ export function QuestionnaireCard({ questionnaire, onDelete }: QuestionnaireCard
         </CardHeader>
         <CardContent className="flex-grow">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col">
+            <motion.div 
+              className="flex flex-col"
+            >
               <span className="text-sm text-muted-foreground">Questions</span>
               <span className="font-medium flex items-center">
                 <ClipboardList className="mr-1 h-4 w-4 text-primary" />
                 {questionnaire._count.questions}
               </span>
-            </div>
-            <div className="flex flex-col">
+            </motion.div>
+            <motion.div 
+              className="flex flex-col"
+            >
               <span className="text-sm text-muted-foreground">Responses</span>
               <span className="font-medium flex items-center">
                 <BarChart className="mr-1 h-4 w-4 text-primary" />
                 {questionnaire._count.responses}
               </span>
-            </div>
+            </motion.div>
           </div>
         </CardContent>
         <CardFooter className="border-t pt-4">
@@ -125,25 +169,34 @@ export function QuestionnaireCard({ questionnaire, onDelete }: QuestionnaireCard
               Created {format(new Date(questionnaire.createdAt), 'MMM d, yyyy')}
             </span>
             <div className="flex space-x-2">
-              <Button asChild size="sm" variant="outline">
-                <Link href={`/questionnaires/${questionnaire.id}/run`}>
-                  <Play className="mr-1 h-3 w-3" />
-                  Run
-                </Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href={`/questionnaires/${questionnaire.id}/edit`}>
-                  <PenSquare className="mr-1 h-3 w-3" />
-                  Edit
-                </Link>
-              </Button>
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/questionnaires/${questionnaire.id}/run`}>
+                    <Play className="mr-1 h-3 w-3" />
+                    Run
+                  </Link>
+                </Button>
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button asChild size="sm">
+                  <Link href={`/questionnaires/${questionnaire.id}/edit`}>
+                    <PenSquare className="mr-1 h-3 w-3" />
+                    Edit
+                  </Link>
+                </Button>
+              </motion.div>
             </div>
           </div>
         </CardFooter>
-      </Card>
+      </MotionCard>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <MotionDialogContent
+          variants={dialogVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
           <DialogHeader>
             <DialogTitle>Delete Questionnaire</DialogTitle>
             <DialogDescription>
@@ -158,15 +211,17 @@ export function QuestionnaireCard({ questionnaire, onDelete }: QuestionnaireCard
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button 
+                variant="destructive" 
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </motion.div>
           </DialogFooter>
-        </DialogContent>
+        </MotionDialogContent>
       </Dialog>
     </>
   );

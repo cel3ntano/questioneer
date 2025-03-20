@@ -3,6 +3,7 @@
 import { formatDistance } from 'date-fns';
 import { ArrowRight, Clock, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuestionnaireWithQuestions } from '@/types/questionnaire';
@@ -23,6 +24,80 @@ interface QuestionnaireSummaryProps {
   onClose: () => void;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1,
+      delayChildren: 0.3
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 300, damping: 25 }
+  }
+};
+
+const successCardVariants = {
+  hidden: { scale: 0.8, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 25
+    }
+  }
+};
+
+const Confetti = () => {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {[...Array(50)].map((_, i) => {
+        const size = Math.random() * 8 + 5;
+        const duration = Math.random() * 2 + 2;
+        const rotation = Math.random() * 360;
+        const delay = Math.random() * 0.5;
+        const xStart = Math.random() * 100;
+        
+        return (
+          <motion.div
+            key={i}
+            className="absolute top-0 w-2 h-2 rounded-full"
+            style={{
+              left: `${xStart}%`,
+              backgroundColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
+              width: size,
+              height: size,
+            }}
+            initial={{ y: -20, opacity: 0, rotate: 0 }}
+            animate={{
+              y: "110vh",
+              opacity: [0, 1, 1, 0],
+              rotate: rotation * 2,
+              x: [0, Math.random() * 100 - 50, Math.random() * 100 - 50],
+            }}
+            transition={{
+              duration,
+              delay,
+              ease: "easeOut",
+              times: [0, 0.2, 0.8, 1]
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 export default function QuestionnaireSummary({
   questionnaire,
   answers,
@@ -37,26 +112,61 @@ export default function QuestionnaireSummary({
   });
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <Card className="bg-primary text-primary-foreground mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl">
-            <CheckCircle className="h-6 w-6 inline-block mr-2" />
-            Questionnaire Completed!
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="flex items-center">
-            <Clock className="h-4 w-4 mr-2" />
-            Completion time: {completionTime}
-          </p>
-        </CardContent>
-      </Card>
+    <motion.div 
+      className="space-y-6 max-w-3xl mx-auto relative"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <Confetti />
+      
+      <motion.div variants={successCardVariants}>
+        <Card className="bg-primary text-primary-foreground mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl flex items-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ 
+                  scale: 1, 
+                  transition: { 
+                    type: "spring",
+                    stiffness: 500,
+                    delay: 0.5
+                  }
+                }}
+              >
+                <CheckCircle className="h-6 w-6 inline-block mr-2" />
+              </motion.div>
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ 
+                  opacity: 1, 
+                  x: 0,
+                  transition: { delay: 0.6, duration: 0.4 }
+                }}
+              >
+                Questionnaire Completed!
+              </motion.span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <motion.p className="flex items-center">
+              <Clock className="h-4 w-4 mr-2" />
+              Completion time: {completionTime}
+            </motion.p>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      <h2 className="text-2xl font-semibold">Your Responses</h2>
+      <motion.h2 
+        className="text-2xl font-semibold"
+        variants={itemVariants}
+      >
+        Your Responses
+      </motion.h2>
 
       <div className="space-y-6">
-        {questionnaire.questions.map((question) => {
+        {questionnaire.questions.map((question, index) => {
           const answer = answers[question.id] || {};
 
           let displayAnswer;
@@ -110,31 +220,45 @@ export default function QuestionnaireSummary({
           }
 
           return (
-            <Card key={question.id} className="overflow-hidden">
-              <CardHeader className="bg-muted/30 pb-3">
-                <CardTitle className="text-base font-medium">
-                  {question.questionText}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">
-                    Your Answer:
+            <motion.div
+              key={question.id}
+              variants={itemVariants}
+              custom={index}
+            >
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-muted/30 pb-3">
+                  <CardTitle className="text-base font-medium">
+                    {question.questionText}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground">
+                      Your Answer:
+                    </div>
+                    <div className="font-medium">{displayAnswer}</div>
                   </div>
-                  <div className="font-medium">{displayAnswer}</div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           );
         })}
       </div>
 
-      <div className="flex justify-end pt-6">
-        <Button onClick={onClose}>
-          Back to Questionnaires
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+      <motion.div 
+        className="flex justify-end pt-6"
+        variants={itemVariants}
+      >
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button onClick={onClose}>
+            Back to Questionnaires
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QuestionnaireWithCounts, QuestionnaireApiResponse, SORT_OPTIONS } from '@/types/questionnaire';
 import { toast } from 'sonner';
+import { DEFAULT_PAGE_SIZE } from '@/lib/constants';
 
 interface UseQuestionnairesProps {
   initialSortValue?: string;
@@ -11,7 +12,7 @@ interface UseQuestionnairesProps {
 
 export function useQuestionnaires({ 
   initialSortValue = 'createdAt-desc', 
-  initialLimit = 10 
+  initialLimit = DEFAULT_PAGE_SIZE 
 }: UseQuestionnairesProps = {}) {
   const [questionnaires, setQuestionnaires] = useState<QuestionnaireWithCounts[]>([]);
   const [isLoading, setIsLoading] = useState(false);

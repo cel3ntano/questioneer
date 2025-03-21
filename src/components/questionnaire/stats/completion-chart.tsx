@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, parseISO } from 'date-fns';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface CompletionData {
   date?: string;
@@ -35,13 +36,14 @@ export default function CompletionChart({
   monthlyData,
 }: CompletionChartProps) {
   const [activeTab, setActiveTab] = useState('daily');
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const processedDailyData = dailyData
     .slice()
     .sort((a, b) => parseISO(a.date!).getTime() - parseISO(b.date!).getTime())
     .map((item) => ({
       ...item,
-      date: format(parseISO(item.date!), 'MMM dd'),
+      date: format(parseISO(item.date!), isMobile ? 'MMM d' : 'MMM dd'),
     }));
 
   const processedWeeklyData = weeklyData
@@ -49,7 +51,10 @@ export default function CompletionChart({
     .sort((a, b) => parseISO(a.week!).getTime() - parseISO(b.week!).getTime())
     .map((item) => ({
       ...item,
-      week: `Week of ${format(parseISO(item.week!), 'MMM dd')}`,
+      week: `Week of ${format(
+        parseISO(item.week!),
+        isMobile ? 'MMM d' : 'MMM dd'
+      )}`,
     }));
 
   const processedMonthlyData = monthlyData
@@ -57,7 +62,10 @@ export default function CompletionChart({
     .sort((a, b) => a.month!.localeCompare(b.month!))
     .map((item) => ({
       ...item,
-      month: format(parseISO(`${item.month!}-01`), 'MMMM yyyy'),
+      month: format(
+        parseISO(`${item.month!}-01`),
+        isMobile ? 'MMM yyyy' : 'MMMM yyyy'
+      ),
     }));
 
   const tooltipFormatter = (value: number) => [
@@ -83,12 +91,23 @@ export default function CompletionChart({
           <TabsContent value="daily" className="h-full">
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={processedDailyData}>
+                <LineChart
+                  data={processedDailyData}
+                  margin={
+                    isMobile
+                      ? { top: 5, right: 10, bottom: 20, left: 5 }
+                      : { top: 10, right: 30, bottom: 10, left: 10 }
+                  }
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
+                    className="text-xs"
                     dataKey="date"
                     tickFormatter={(tick) => tick}
-                    interval={2}
+                    interval={isMobile ? 4 : 2}
+                    angle={isMobile ? -45 : 0}
+                    textAnchor={isMobile ? 'end' : 'middle'}
+                    height={isMobile ? 60 : 30}
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip formatter={tooltipFormatter} />
@@ -97,8 +116,8 @@ export default function CompletionChart({
                     dataKey="count"
                     stroke="var(--chart-1)"
                     strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
+                    dot={{ r: isMobile ? 3 : 4 }}
+                    activeDot={{ r: isMobile ? 5 : 6 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -108,11 +127,23 @@ export default function CompletionChart({
           <TabsContent value="weekly" className="h-full">
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={processedWeeklyData}>
+                <BarChart
+                  data={processedWeeklyData}
+                  margin={
+                    isMobile
+                      ? { top: 5, right: 10, bottom: 20, left: 5 }
+                      : { top: 10, right: 30, bottom: 10, left: 10 }
+                  }
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
+                    className="text-xs"
                     dataKey="week"
                     tickFormatter={(tick) => tick.replace('Week of ', '')}
+                    interval={isMobile ? 1 : 0}
+                    angle={isMobile ? -45 : 0}
+                    textAnchor={isMobile ? 'end' : 'middle'}
+                    height={isMobile ? 60 : 30}
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip formatter={tooltipFormatter} />
@@ -129,9 +160,23 @@ export default function CompletionChart({
           <TabsContent value="monthly" className="h-full">
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={processedMonthlyData}>
+                <BarChart
+                  data={processedMonthlyData}
+                  margin={
+                    isMobile
+                      ? { top: 5, right: 10, bottom: 20, left: 5 }
+                      : { top: 10, right: 30, bottom: 10, left: 10 }
+                  }
+                >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis
+                    className="text-xs"
+                    dataKey="month"
+                    angle={isMobile ? -45 : 0}
+                    textAnchor={isMobile ? 'end' : 'middle'}
+                    height={isMobile ? 60 : 30}
+                    interval={0}
+                  />
                   <YAxis allowDecimals={false} />
                   <Tooltip formatter={tooltipFormatter} />
                   <Bar

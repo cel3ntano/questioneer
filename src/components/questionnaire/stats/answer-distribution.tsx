@@ -158,6 +158,12 @@ export default function AnswerDistribution({
                 innerRadius={innerRadius}
                 fill="#8884d8"
                 dataKey="value"
+                labelLine={false}
+                label={
+                  formattedData.length <= 5 && !isMobile
+                    ? ({ percent }) => `${(percent * 100).toFixed(0)}%`
+                    : undefined
+                }
               >
                 {formattedData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
